@@ -1,0 +1,71 @@
+
+{
+    "openAIApiKey": {
+      "type": "string",
+      "label": "OpenAI Api Key",
+      "value": "Nope. Not sharing."
+    },
+    "systemMessages": {
+      "type": "string",
+      "label": "Messages that describe your chatbot (just write normal sentances)",
+      "group": "Chatbot personality",
+      "value": "You are an assistant to a twitch streamer. You are about 70 years old. You call the streamer your grandchild. You often spoil your grandchild with candy."
+    },
+    "showText": {
+      "group": "Text Section",
+      "type": "checkbox",
+      "label": "Show Text",
+      "value": false
+    },
+    "fontName": {
+      "group": "Text Section",
+      "type": "googleFont",
+      "label": "Select a font:",
+      "value": "Roboto"
+    },
+    "songNameFontSize": {
+      "group": "Text Section",
+      "type": "number",
+      "label": "Question Font Size",
+      "value": 96,
+      "min": 12,
+      "step": 1
+    },
+    "songNameFontColor": {
+      "group": "Text Section",
+      "type": "colorpicker",
+      "label": "Question Font Color",
+      "value": "#000000"
+    },
+    "artistNameFontSize": {
+      "group": "Text Section",
+      "type": "number",
+      "label": "Answer Font Size",
+      "value": 96,
+      "min": 12,
+      "step": 1
+    },
+    "artistNameFontColor": {
+      "group": "Text Section",
+      "type": "colorpicker",
+      "label": "Answer Font Color",
+      "value": "#000000"
+    },
+    "widgetName": {
+      "type": "hidden",
+      "value": "Spotify Display"
+    },
+    "widgetAuthor": {
+      "type": "hidden",
+      "value": "Nunyaa"
+    },
+    "widgetVersion": {
+      "type": "hidden",
+      "value": "0.1"
+    },
+    "widgetUpdateUrl": {
+      "type": "hidden",
+      "value": "https://github.com/JustinBLDang/SE-Widgets"
+    }
+  }
+  
