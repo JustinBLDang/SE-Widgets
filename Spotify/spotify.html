@@ -1,5 +1,32 @@
 <link href="https://fonts.googleapis.com/css?family={{fontName}}" rel="stylesheet">
-<div class="main-container hidden" id="main-container">
-    <div class="question" id="question" style="font-size: {questionFontSize}px; color: {questionFontColor}"></div>
-    <div class="answer" id="answer" style="font-size: {answerFontSize}px; color: {answerFontColor}"></div>
+<div class="main-container horizontalLayout" id="main-container">
+    <div class="cover ImageBGStyle"></div>
+    <div class="info ColorBGStyle">
+    </div>
+  	<div class="track-name" id="track-name-panel">
+    	<div class="animated">
+      		<div class="track-name-animated" id="track-name" style="font-size: 3em; font-weight: bold; color: {trackNameColor}; ">
+          		Nunya is testin
+        	</div>
+    	</div>
+  	</div>
+  	<div class="track-artist" id="track-artist-panel">
+    	<div class="animated">
+      		<div class="track-artist-animated" id="track-artist" style="font-size: 2em; color: {artistNameColor};">
+            	Nunya
+    		</div>
+    	</div>
+  	</div>
+    <div class="playback ColorBGStyle" >
+    </div>
+    <div class="track-runtime" id="track-runtime" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
+        0:00
+    </div>
+    <div class="track-length" id="track-length" style="font-size: 2em; font-weight: bold; color: {trackDurationColor}; text-align: right;">
+        0:00
+    </div>
+    <div class="track-bar">
+        <div class="track-progress" id="track-progress">
+        </div>
+    </div>
 </div>
