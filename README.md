@@ -1,7 +1,7 @@
 # SE-Widgets
 Widgets created for Stream Elements.
 
-# Spotify display widget for SE
+# Spotify - Display currently playing track
 ![Screenshot 2025-03-24 231800](https://github.com/user-attachments/assets/b633da20-24f1-484e-9bc6-9462baec76b4)
 
 Features:
