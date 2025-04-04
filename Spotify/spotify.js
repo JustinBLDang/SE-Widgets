@@ -315,7 +315,7 @@ const App_Function = async () => {
   // 4. If track doesnt exist or song isn't playing:
   //   - Slow down polling rate
 
-  // true if content is resolved, false otherwise
+    // TODO: conditional should check if content.status == "success"
   if (content) {
     UpdateTrackName(content["item"].name);
     UpdateTrackArtist(content["item"].artists);
