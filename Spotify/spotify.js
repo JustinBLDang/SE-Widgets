@@ -71,7 +71,6 @@ const currentToken = {
   }
 };
 //#region UI
-// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
 
 const animationStartAndEndDelay = 3; // delay time in seconds
 const StartDelayTrackNameAnimation = () => {
