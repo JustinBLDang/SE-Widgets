@@ -7,18 +7,6 @@
     "type": "string",
     "label": "Client SecretID for Spotify App"
   },
-  "access_token": {
-    "type": "string",
-    "label": "Spotify Access Token"
-  },
-  "refresh_token": {
-    "type": "string",
-    "label": "Spotify Refresh Token"
-  },
-  "expires_in": {
-    "type": "string",
-    "label": "Spotify Access Token Expiration"
-  },
   "BGColor": {
     "type": "colorpicker",
     "label": "Background Color",

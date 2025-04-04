@@ -1,54 +1,96 @@
-const desiredAnimationTime = 6;
-const desiredWidth = 538.156;
-let trackNameElement, trackArtistElement, trackNameViewportElement, trackRuntimeElement, trackLengthElement, trackPlaybackBarElement;
+const desiredAnimationTime = 7.770980905165045;
+const desiredWidth = 697.482666015625;
+let trackCoverElement, trackNameElement, trackArtistElement, trackNameViewportElement, trackRuntimeElement, trackLengthElement, trackPlaybackBarElement;
 let clientId, clientSecret;
-let normalRate = 1000, currentRate = 1000, idleRate = 2000;
-let tickRateForFunctionCalls = 200;
-let timeWindowForRefreshToken = 60000;
+let normalRate = 500, currentRate = normalRate, idleRate = 2000, tickRate = 250;
+let elapsedTimeSinceAppFunctionCall = currentRate;
+let timeWindowForRefreshToken = 60000; // Attempt refresh 60s before expiration.
 let isAppBusy = false;
 let currentTrackLength;
 let appIntervalID;
 
-const getFromSEStorage = (value) => {
-  SE_API.store.get(value).then((data) => {
-    return data.value;
+const tokenEndpoint = "https://accounts.spotify.com/api/token";
+
+const getFromSEStorage = async (value) => {
+  let returnVal = null;
+  await SE_API.store.get(value).then((data) => {
+    returnVal = data.value;
   }, (rejected) => {
-    console.log("Rejected Request: " + rejected);
+    console.log(rejected);
   }).catch((error) => {
-    console.log("Error: " + error);
-  }); 
-  return null;
+    console.log(error);
+  });
+  return returnVal;
 }
 
-// Data structure that manages the current active token, caching it in localStorage
+// Data structure that manages the current active token, caching it in SE_API
 const currentToken = {
-  get access_token() { return getFromSEStorage("access_token"); },
-  get refresh_token() { return getFromSEStorage("refresh_token"); },
-  get expires_in() { return getFromSEStorage("refresh_in"); },
-  get expires() { return getFromSEStorage("expires"); },
+  access_token: null,
+  refresh_token: null,
+  expires_in: null,
+  expires: null,
 
   save: function (response) {
     const { access_token, refresh_token, expires_in } = response;
-
-    SE_API.store.setItem('access_token', access_token);
-    if(refresh_token){ 
-      SE_API.store.setItem('refresh_token', refresh_token); 
-      SE_API.store.setItem('expires_in', expires_in);
+    // check if response provided null for tokens
+    if (access_token) {
+      SE_API.store.set("access_token", access_token);
+      this.access_token = access_token;
     }
 
-    const now = new Date();
-    const expiry = new Date(now.getTime() + (expires_in * 1000));
-    SE_API.store.setItem('expires', expiry);
+    if (refresh_token) {
+      SE_API.store.set("refresh_token", refresh_token);
+      this.refresh_token = refresh_token;
+    }
+
+    if (expires_in) {
+      SE_API.store.set("expires_in", expires_in);
+      this.expires_in = expires_in;
+
+      const now = new Date();
+      const expires = new Date(now.getTime() + (expires_in * 1000));
+      SE_API.store.set("expires", expires);
+      this.expires = expires;
+    }
+  },
+  retrieve: async function () {
+    await getFromSEStorage("access_token").then((data) => {
+      this.access_token = data;
+    });
+    await getFromSEStorage("refresh_token").then((data) => {
+      this.refresh_token = data;
+    });
+    await getFromSEStorage("expires_in").then((data) => {
+      this.expires_in = data;
+    });
+    await getFromSEStorage("expires").then((data) => {
+      this.expires = data;
+    });
+
+    return this;
   }
 };
 //#region UI
 // Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
-const playTrackNameAnimation = () => {
-  setTimeout(() => {trackNameAnimation[0].play();}, 3 * 1000);
-}
 
-const playTrackArtistAnimation = () => {
-  setTimeout(() => {trackArtistAnimation[0].play();}, 3 * 1000);
+const animationStartAndEndDelay = 3; // delay time in seconds
+const StartDelayTrackNameAnimation = () => {
+  trackNameAnimation[0].pause();
+  setTimeout(() => { trackNameAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+}
+const EndDelayTrackNameAnimation = () => {
+  setTimeout(() => { 
+    trackNameAnimation[0].play(); 
+    }, animationStartAndEndDelay * 1000);
+}
+const StartDelayTrackArtistAnimation = () => {
+  trackArtistAnimation[0].pause();
+  setTimeout(() => { trackArtistAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+}
+const EndDelayTrackArtistAnimation = () => {
+  setTimeout(() => { 
+    trackArtistAnimation[0].play(); 
+    }, animationStartAndEndDelay * 1000);
 }
 
 const InitializeUI = () => {
@@ -58,54 +100,56 @@ const InitializeUI = () => {
   trackRuntimeElement = document.getElementById("track-runtime");
   trackLengthElement = document.getElementById("track-length");
   trackPlaybackBarElement = document.getElementById("track-progress");
+  trackCoverElement = document.getElementById("track-cover");
 
   trackNameAnimation = trackNameElement.getAnimations();
   trackArtistAnimation = trackArtistElement.getAnimations();
 
-  // stops text from moving(animation not paused) at start and end to help readers.
-  trackNameElement.addEventListener("animationend", playTrackNameAnimation);
-  trackArtistElement.addEventListener("animationend", playTrackArtistAnimation);
+  // stops text from moving at start and end to help readers.
+  trackNameElement.addEventListener("animationstart", StartDelayTrackNameAnimation);
+  trackNameElement.addEventListener("animationend", EndDelayTrackNameAnimation);
+  trackArtistElement.addEventListener("animationstart", StartDelayTrackArtistAnimation);
+  trackArtistElement.addEventListener("animationend", EndDelayTrackArtistAnimation);
+}
+
+const UpdateTrackCover = (trackCover) => {
+  trackCoverElement.style.background = `url(${trackCover})`;
 }
 
 const UpdateTrackName = (trackName) => {
   trackNameElement.textContent = trackName;
+  trackNameElement.style.animationPlayState = "paused";
 
-  /*
-    NOTE: element.clientWidth seems round to highest integer(on Chrome).
-    Want to pause since the animation can lead to jittering with text smaller than viewport
-  */
-  if(trackNameElement.clientWidth <= trackNameViewportElement.clientWidth){
-    trackNameElement.style.animationPlayState = "paused"
+  if (trackNameElement.clientWidth <= trackNameViewportElement.clientWidth) {
     return;
   }
 
-  let currentWidth = trackNameElement.clientWidth;
-  let newDelay = desiredAnimationTime * (currentWidth / desiredWidth);  
+  let newDelay = (desiredAnimationTime / desiredWidth) * trackNameElement.getBoundingClientRect().width;
 
-  trackNameElement.style.animation = `${newDelay}s linear 2s 1 normal forwards scrollRight;`;
+  trackNameElement.style.animation = `${newDelay}s linear 1 normal forwards running scrollRight`;
 }
 
 const UpdateTrackArtist = (trackArtists) => {
-  if(trackArtists.length > 0){
-    trackArtistElement.textContent = trackArtist[0];
-    for(let artist = 1; artist < trackArtists.length; artist++){
-      trackArtistElement.textContent += `, ${trackArtists[artist]}`;
+  if (trackArtists.length > 0) {
+    let temp = trackArtists[0].name;
+    for (let artist = 1; artist < trackArtists.length; artist++) {
+      temp += `, ${trackArtists[artist].name}`;
     }
+    trackArtistElement.textContent = temp;
   }
   else {
     trackArtistElement.textContent = "";
   }
-
+  trackArtistElement.style.animationPlayState = "paused";
+  
   // tracknameViewport same size as artistnameViewport
-  if(trackArtistElement.clientWidth <= trackNameViewportElement.clientWidth){
-    trackArtistElement.style.animationPlayState = "paused"
+  if (trackArtistElement.clientWidth <= trackNameViewportElement.clientWidth) {
     return;
   }
 
-  let currentWidth = trackArtistElement.clientWidth;
-  let newDelay = desiredAnimationTime * (currentWidth / desiredWidth);
+  let newDelay =  (desiredAnimationTime / desiredWidth) * trackArtistElement.getBoundingClientRect().width;
 
-  trackArtistElement.style.animation = `${newDelay}s linear 2s 1 normal forwards scrollRight;`;
+  trackArtistElement.style.animation = `${newDelay}s linear 1 normal forwards running scrollRight`;
 }
 
 const UpdatePlayback = (runtime, length = -1) => {
@@ -113,7 +157,7 @@ const UpdatePlayback = (runtime, length = -1) => {
   trackRuntimeElement.textContent = runtimeDate.getMinutes() + ":" + ("0" + runtimeDate.getSeconds()).slice(-2);
 
   // if length exists, change the length
-  if(length > 0){
+  if (length > 0) {
     currentTrackLength = length;
     let lengthDate = new Date(length);
     trackLengthElement.textContent = lengthDate.getMinutes() + ":" + ("0" + lengthDate.getSeconds()).slice(-2);
@@ -136,16 +180,17 @@ const UpdatePlayback = (runtime, length = -1) => {
           3b. duration_ms:        The track length in milliseconds.
           4b. name:               The name of the track.
 */
-async function getCurrentTrack(){
+async function getCurrentTrack() {
   const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
     method: 'GET',
     headers: { Authorization: 'Bearer ' + currentToken.access_token },
   });
 
-  // No Content, track player has no song selected.
-  if(response["status"] === 204) { 
-    SpotifyErrorHandler(response["status"]);
-    return null; 
+  response.function = "GetCurrentTrack";
+
+  // Check if no content found in track player
+  if (await SpotifyErrorHandler(response)) {
+    return Promise.reject({ status: "get-content-fail" });;
   }
 
   return await response.json();
@@ -161,153 +206,131 @@ async function refreshCurrentToken() {
     body: new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: currentToken.refresh_token
-    }),
+    })
   });
-  
-  const responseJson = await response.json()
-  currentToken.save(responseJson);
-  return responseJson;
+
+  response.function = "RefreshCurrentToken";
+
+  if (await SpotifyErrorHandler(response)) {
+    return Promise.reject({ status: "refresh-fail" });
+  }
+
+  currentToken.save(await response.json());
+  return Promise.resolve({ status: "refresh-success" });
 }
 //#endregion Spotify API
 
+const pauseAndCall = async (func, wait_Time) => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(func());
+    }, wait_Time);
+  });
+}
+
 // Handles: 204, 304, 400, 401, 404, 429, 500, 502, 503
-const SpotifyErrorHandler = (error, func = null) => {
-  if(error["message"]){
-    console.log(error["status"] + ": " + error["message"])
+// return true if error, false if no error
+const SpotifyErrorHandler = async (error, func = null) => {
+  if(error["status"] == 200){
+    return;
   }
-  else {
-    console.log(error["status"]);
-  }
-  switch(error["status"]){
+  let message = error["status"] ? "(SpotifyErrorHandler) Status: " + error["status"] : "(SpotifyErrorHandler) Status: None Provided";
+  message += error["function"] ? "\nCalled from: " + error["function"] : "\nCalled from: None Provided";
+  message += error["message"] ? "\nMessage: " + error["message"] : "\nMessage: None Provided";
+  console.log(message);
+
+  switch (error["status"]) {
     case 204:
       // set polling to idle since no song is selected in track Player
       currentRate = idleRate;
-      break;
+      return true;
     case 304:
-      break;
+      return true;
     case 400:
-      break;
+      return true;
     case 401:
-      break;
+      return true;
     case 404:
-      break;
+      return true;
     case 429:
-      const wait_Time = error.headers.get("retry-after");
-      console.log("Rate Limited. Retrying in " + wait_Time + " seconds.");
-      if(func){
-        setTimeout(async () => {await func();}, wait_Time * 1000)
+      const safetyBuffer = 5;
+      const wait_Time = error.headers.get("retry-after"); // retry-after header is time in seconds
+      console.log("Rate Limited. Retrying in " + (wait_Time + safetyBuffer) + " seconds.");
+      if (func) {
+        await pauseAndCall(func, (wait_Time + safetyBuffer) * 1000);
       }
-      break;
+      return true;
     case 500:
-      break;
+      return true;
     case 502:
-      break;
+      return true;
     case 503:
-      break;
+      return true;
     default:
-      break;
+      return false;
   }
 }
 
 const InitializeSpotifyAPI = async (fieldData) => {
-  // Order of code logic:
-  // On startup(WidgetLoad):
-  // 1. If we have expired access token
-  //   1a. Refresh access token
-  // 2. Else we will ask user to Authorize app and relaunch the widget(close widget after prompt)
-  if(!(currentToken.refresh_token)){
-    currentToken.save(fieldData);
-  }
+  clientId = fieldData["spotifyClientID"];
+  clientSecret = fieldData["spotifyClientSecretID"];
+  currentToken.save(JSON.parse(JSON.stringify(fieldData)));
+  await currentToken.retrieve();
 
   const currentTime = new Date();
-  if(currentToken.expires - timeWindowForRefreshToken <= currentTime){
-    let refreshToken = await refreshCurrentToken();
+  await refreshCurrentToken().then((data) => {
+    console.log("(InitializeSpotifyAPI) Refreshed Token");
+  }).catch((error) => {
+    SpotifyErrorHandler(error, refreshCurrentToken);
+    return Promise.reject({ status: "setup-fail", message: "(InitializeSpotifyAPI) Error on Initialization. Could not refresh token." });
+  });
 
-    // TODO: error catches rejected promise, catch will catch errors
-    refreshToken.then((data) => {
-      return data;
-    }, (rejected) => {
-      // Only looking for 429
-      SpotifyErrorHandler(rejected, refreshCurrentToken);
-    }).catch((error) => {
-      console.log("Error: " + error);
-    }); 
-  }
-  else{
-    console.log("Spotify Widget missing field data, refer to setup page on how to authorize this app.");
-    return Promise.reject("Spotify Widget missing field data.");
-  }
+  return Promise.resolve({ status: "setup-success", message: "" });
 }
 
-/*
-  This function should be a loop:
-  - We use a recursive call with promises. This forces us to wait until fail or success on prior request.
-  - When we finish fetching data, we then execute the UI updating code and fetch again.
-  
-  const promise = new Promise((resolve, reject) => {
-    // Perform asynchronous operation
-    setTimeout(() => {
-      resolve("Data fetched successfully!"); // Resolve the promise with data
-    }, 1000);
-  });
-
-  promise.then((data) => {
-    // Code to execute on successful resolution
-    console.log(data); // Output: "Data fetched successfully!"
-  }).catch((error) => {
-    // Code to execute on rejection (if an error occurs)
-    console.error(error);
-  });
-*/
 const App_Function = async () => {
-    if(isAppBusy){
-      return;
+  // Ensures the program makes calls once every second
+  elapsedTimeSinceAppFunctionCall += tickRate;
+  if (isAppBusy || (elapsedTimeSinceAppFunctionCall <= currentRate)) {
+    return;
+  }
+ 
+  isAppBusy = true;
+
+  const currentTime = new Date();
+  if (!currentToken.expires || (currentToken.expires - timeWindowForRefreshToken <= currentTime)) {
+    await refreshCurrentToken().then((data) => {
+      console.log("(App_Function) Refreshed Token");
+    }).catch((error) => {
+      SpotifyErrorHandler(error, refreshCurrentToken);
+      return Promise.reject({ status: "refresh-fail", message: "(App_Function) Error on Refresh Attempt." });
+    });
+  }
+
+  let content = await getCurrentTrack().catch(e => { console.log(e) });
+
+  // 3. If we have new content: 
+  //   - Update UI with content
+  //   - TODO: Check if Playback is paused here and handle it
+  // contentPromise fulfills true if we have resolved promise or rejected promise, false if gettingContent(true)
+  // 4. If track doesnt exist or song isn't playing:
+  //   - Slow down polling rate
+
+  // true if content is resolved, false otherwise
+  if (content) {
+    UpdateTrackName(content["item"].name);
+    UpdateTrackArtist(content["item"].artists);
+    UpdatePlayback(content["progress_ms"], content["item"].duration_ms);
+    UpdateTrackCover(content["item"].album.images[1].url);
+
+    // If track player is playing a song, linear decrease of interval period by tickRate
+    if (currentRate != normalRate) {
+      currentRate = Math.max(currentRate - tickRate, normalRate);
     }
+  }
 
-    isAppBusy = true;
-
-    // During Execution:
-    // 1. Refresh access token while within timeWindowForRefreshToken
-    if(currentToken.expires - timeWindowForRefreshToken <= currentTime){
-      await refreshCurrentToken().then((data) => {
-        return data;
-      }, (rejected) => {
-        SpotifyErrorHandler(rejected, refreshCurrentToken);
-      }).catch((error) => {
-        console.log("Error: " + error);
-      });
-    }
-
-    // 2. Grab content
-    contentPromise = await getCurrentTrack();
-    
-    // 3. If we have new content: 
-    //   - Update UI with content
-    //   - TODO: Check if Playback is paused here and handle it
-    // contentPromise fulfills true if we have resolved promise or rejected promise, false if gettingContent(true)
-    // 4. If track doesnt exist or song isn't playing:
-    //   - Slow down polling rate
-    if(contentPromise){
-      contentPromise.then((data) => {
-        UpdateTrackName(data["item"].name);
-        UpdateTrackArtist(data["item"].artists);
-        UpdatePlayback(data["progress_ms"], data["item"].duration);
-        
-        // Since we track player is active(we are receiving content), half the 
-        if((currentRate != normalRate) && data["is_playing"]){
-          currentRate = Math.max(((currentRate - normalRate) / 2) + normalRate, normalRate);
-        }
-        else {
-          currentRate = idleRate;
-        }
-      }, (rejected) => {
-        SpotifyErrorHandler(rejected);
-      }).catch((error) => {
-        console.log("Error: " + error);
-      });
-    }
-
-    isAppBusy = false;
+  elapsedTimeSinceAppFunctionCall = -1 * tickRate; // Need this to wait the full time, dont set elapsed time to zero
+  isAppBusy = false;
 }
 
 const AppQuit = () => {
@@ -318,35 +341,18 @@ const AppQuit = () => {
 }
 
 window.addEventListener('onWidgetLoad', async function (obj) {
+  console.log("--------------------Widget Started--------------------");
   // getting field data from streamlabs
   fieldData = obj.detail.fieldData;
-  clientId = fieldData["spotifyClientID"];
-  clientSecret = fieldData["spotifyClientSecretID"];
 
-  let elapsedTimeSinceAppFunctionCall = currentRate;
-  
   // Initialization/setup
   InitializeUI();
-  const setupResult = InitializeSpotifyAPI();
+  await InitializeSpotifyAPI(fieldData).catch(e => { console.log(e); });
 
   // Over engineering so I feel good
-  setupResult.then((resolved) => {
-    appIntervalID = setInterval(() => {
-      if(elapsedTimeSinceAppFunctionCall >= currentRate){
-        App_Function();
-        elapsedTimeSinceAppFunctionCall = 0;
-      }
-      elapsedTimeSinceAppFunctionCall += tickRateForFunctionCalls
-    }, tickRateForFunctionCalls);
-  }, (rejected) => {
-    AppQuit();
-  }).catch((error) => {
-    console.log("Error: " + error);
-  });
+  appIntervalID = setInterval(App_Function, tickRate);
 });
 
 onbeforeunload = (event) => {
   AppQuit();
 };
-
-
