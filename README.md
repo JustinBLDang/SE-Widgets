@@ -1,7 +1,7 @@
 # SE-Widgets
 Widgets created for Stream Elements.
 
-# Spotify - Display currently playing track
+# Spotify - Overlay Current Track
 Features:
 1. Display song name, artist, album cover/video, duration.
 2. Horizontal and Vertical Layout
