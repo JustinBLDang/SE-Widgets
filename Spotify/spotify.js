@@ -1,5 +1,5 @@
-const desiredAnimationTime = 7.770980905165045;
-const desiredWidth = 697.482666015625;
+const desiredAnimationTime = 6.144;
+const desiredWidth = 551.53 - 352.6;
 let trackCoverElement, trackNameElement, trackArtistElement, trackNameViewportElement, trackRuntimeElement, trackLengthElement, trackPlaybackBarElement;
 let clientId, clientSecret;
 let normalRate = 500, currentRate = normalRate, idleRate = 2000, tickRate = 250;
@@ -71,6 +71,7 @@ const currentToken = {
   }
 };
 //#region UI
+// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
 
 const animationStartAndEndDelay = 3; // delay time in seconds
 const StartDelayTrackNameAnimation = () => {
@@ -78,18 +79,14 @@ const StartDelayTrackNameAnimation = () => {
   setTimeout(() => { trackNameAnimation[0].play(); }, animationStartAndEndDelay * 1000);
 }
 const EndDelayTrackNameAnimation = () => {
-  setTimeout(() => { 
-    trackNameAnimation[0].play(); 
-    }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackNameAnimation[0].play(); }, animationStartAndEndDelay * 1000);
 }
 const StartDelayTrackArtistAnimation = () => {
   trackArtistAnimation[0].pause();
   setTimeout(() => { trackArtistAnimation[0].play(); }, animationStartAndEndDelay * 1000);
 }
 const EndDelayTrackArtistAnimation = () => {
-  setTimeout(() => { 
-    trackArtistAnimation[0].play(); 
-    }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackArtistAnimation[0].play(); }, animationStartAndEndDelay * 1000);
 }
 
 const InitializeUI = () => {
@@ -116,16 +113,16 @@ const UpdateTrackCover = (trackCover) => {
 }
 
 const UpdateTrackName = (trackName) => {
-  trackNameElement.textContent = trackName;
+  trackNameElement.innerText = trackName;
   trackNameElement.style.animationPlayState = "paused";
 
-  if (trackNameElement.clientWidth <= trackNameViewportElement.clientWidth) {
+  if (trackNameElement.getBoundingClientRect().width <= trackNameViewportElement.getBoundingClientRect().width) {
     return;
   }
 
-  let newDelay = (desiredAnimationTime / desiredWidth) * trackNameElement.getBoundingClientRect().width;
+  let newDelay = (desiredAnimationTime / desiredWidth) * (trackNameElement.getBoundingClientRect().width - trackNameViewportElement.getBoundingClientRect().width);
 
-  trackNameElement.style.animation = `${newDelay}s linear 1 normal forwards running scrollRight`;
+  trackNameElement.style.animation = `${newDelay}s linear 0s 1 normal forwards running scrollRight`;
 }
 
 const UpdateTrackArtist = (trackArtists) => {
@@ -134,21 +131,21 @@ const UpdateTrackArtist = (trackArtists) => {
     for (let artist = 1; artist < trackArtists.length; artist++) {
       temp += `, ${trackArtists[artist].name}`;
     }
-    trackArtistElement.textContent = temp;
+    trackArtistElement.innerText = temp;
   }
   else {
-    trackArtistElement.textContent = "";
+    trackArtistElement.innerText = "";
   }
   trackArtistElement.style.animationPlayState = "paused";
   
   // tracknameViewport same size as artistnameViewport
-  if (trackArtistElement.clientWidth <= trackNameViewportElement.clientWidth) {
+  if (trackArtistElement.getBoundingClientRect().width <= trackNameViewportElement.getBoundingClientRect().width) {
     return;
   }
 
-  let newDelay =  (desiredAnimationTime / desiredWidth) * trackArtistElement.getBoundingClientRect().width;
+  let newDelay =  (desiredAnimationTime / desiredWidth) * (trackArtistElement.getBoundingClientRect().width - trackNameViewportElement.getBoundingClientRect().width);
 
-  trackArtistElement.style.animation = `${newDelay}s linear 1 normal forwards running scrollRight`;
+  trackArtistElement.style.animation = `${newDelay}s linear 0s 1 normal forwards running scrollRight`;
 }
 
 const UpdatePlayback = (runtime, length = -1) => {
@@ -315,12 +312,14 @@ const App_Function = async () => {
   // 4. If track doesnt exist or song isn't playing:
   //   - Slow down polling rate
 
-    // TODO: conditional should check if content.status == "success"
+  // true if content is resolved, false otherwise
   if (content) {
-    UpdateTrackName(content["item"].name);
-    UpdateTrackArtist(content["item"].artists);
+    if(content["item"].name != trackNameElement.textContent){
+      UpdateTrackName(content["item"].name);
+      UpdateTrackArtist(content["item"].artists);
+      UpdateTrackCover(content["item"].album.images[1].url);
+    }
     UpdatePlayback(content["progress_ms"], content["item"].duration_ms);
-    UpdateTrackCover(content["item"].album.images[1].url);
 
     // If track player is playing a song, linear decrease of interval period by tickRate
     if (currentRate != normalRate) {

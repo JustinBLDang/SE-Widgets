@@ -17,6 +17,13 @@
     "label": "Select a font:",
     "value": "Roboto"
   },
+  "fontSize": {
+    "type": "number",
+    "label": "font size: ",
+    "min": 1,
+    "step": 1,
+    "value": 18
+  },
   "trackNameColor": {
     "type": "colorpicker",
     "label": "Track Name Color",
@@ -34,15 +41,15 @@
   },
   "widgetName": {
     "type": "hidden",
-    "value": "Overlay Song Info for Spotify"
+    "value": "Spotify Currently Playing Display"
   },
   "widgetAuthor": {
     "type": "hidden",
-    "value": "Nunyaa"
+    "value": "NB_0B"
   },
   "widgetVersion": {
     "type": "hidden",
-    "value": "0.1"
+    "value": "0.5"
   },
   "widgetUpdateUrl": {
     "type": "hidden",
