@@ -2,13 +2,9 @@
 Widgets created for Stream Elements.
 
 # Spotify - Display currently playing track
-![Screenshot 2025-03-24 231800](https://github.com/user-attachments/assets/b633da20-24f1-484e-9bc6-9462baec76b4)
-
 Features:
 1. Display song name, artist, album cover/video, duration.
+2. Horizontal and Vertical Layout
 
-Planned:
-1. Different overlay layouts
-2. Reverse Engineer Spotify Canvas API
-3. Extend app to work with Youtube Music
+![Spotify Display](https://github.com/user-attachments/assets/31a9bf63-7f38-4d9f-863a-84cf0f2b8dec)
 
