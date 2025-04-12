@@ -41,7 +41,7 @@
   },
   "widgetName": {
     "type": "hidden",
-    "value": "Overlay Song Info for Spotify"
+    "value": "Spotify - Overlay Current Track"
   },
   "widgetAuthor": {
     "type": "hidden",
