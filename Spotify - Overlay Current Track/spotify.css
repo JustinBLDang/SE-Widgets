@@ -1,4 +1,4 @@
-/* #region MainContainer */
+/* #region Main */
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -6,8 +6,7 @@
 * {
     font-family: {{fontName}}, Nunito, Arial, sans-serif;
     font-size: {{fontSize}}px;
-    margin: 0;
-    padding: 0;
+    text-shadow: {{textDropShadowOffset}}px {{textDropShadowOffset}}px {{textDropShadowBlurSize}}px black;
 }
 .main-container {
     width: 100%;
@@ -15,7 +14,7 @@
     position: relative;
 }
 .ColorBGStyle {
-    background: {{BGColor}};
+    background: {{PanelColor}};
 }
 .ImageBGStyle {
     background: url(https://i.scdn.co/image/ab67616d00001e02ff9ca10b55ce82ae553c8228);
@@ -24,7 +23,11 @@
 }
 .PanelStyle {
     border-radius: 25px;
-    padding: 1em;
+    padding: {{PanelPadding}}em;
+}
+.GradientStyle {
+    background: linear-gradient(to bottom, {{GradientTopColor}}, {{GradientBottomColor}} {{GradientSize}}%);
+    border-radius: 0 0 25px 25px;
 }
 .TextVignette {
     position: absolute;
@@ -34,7 +37,8 @@
     width: 100%;
     mask-image: linear-gradient(left, transparent 0%, black 50%, transparent 100%);
 }
-/* #endregion MainContainer */
+/* #endregion Main */
+/* #region ElementsandAnimation */
 /* #region BackAndForthAnimation */
 .animated {
     position: relative;
@@ -45,28 +49,21 @@
     width: fit-content;
     white-space: no-wrap;
 }
-
-/*
-    Need to us JS to change animation time as a function of the length of the text in the trackname/trackartist,
-
-    https://stackoverflow.com/questions/51697419/how-to-set-the-animation-time-of-a-paragraph-based-on-the-length-of-the-text-in
-*/
 .track-name-animated {
     color: #fff;
-    animation: 6s linear 1 normal forwards scrollRight;
+    animation: 4s linear 0s 1 normal forwards paused scrollRight;
     display: inline-block;
     position: relative;
 }
-
 .track-artist-animated {
     color: #fff;
-    animation: 6s linear 1 normal forwards scrollRight;
+    animation: 4s linear 0s 1 normal forwards paused scrollRight;
     display: inline-block;
     position: relative;
 }
 @keyframes scrollRight {
     from {
-		left: 0;
+		left: 0%;
     }
     to {
         transform: translateX(-100%);
@@ -115,15 +112,17 @@
     border-radius: 5px;
     background: #717171;
     height: 0.5em;
+    margin: 0 0 .3em 0;
 }
 
 .track-progress {
     border-radius: 5px;
-    width: 80%;
+    width: 0%;
     height: 100%;
     background: #c1c1c1;
 }
 /* #endregion ProgressBar */
+/* #endregion ElementsandAnimation */
 /* #region HorizontalLayout */
 /*
     Grid:
@@ -136,28 +135,42 @@
 .horizontalLayout {
     display: grid;
   	grid-template: "track-cover track-info-playback" 300px / 300px 1fr;
-    grid-column-gap: 1em;
+    grid-column-gap: 0.5em;
 }
 .horizontalLayout .track-info-playback {
     grid-area: track-info-playback;
     display: grid;
     grid-template: "track-info" 3fr "track-playback" 2fr / 1fr;
-    grid-row-gap: 1em;
+    grid-row-gap: 0.5em;
 }
 /* #endregion HorizontalLayout */
 /* #region VerticalLayout */
 .verticalLayout {
     display: grid;
     grid-template: "track-cover" 300px "track-info-playback" 1fr / 300px;
-    grid-row-gap: 1em;
+    grid-row-gap: 0.5em;
 }
 
 .verticalLayout .track-info-playback {
     grid-area: track-info-playback;
     display: grid;
     grid-template: "track-info" 3fr "track-playback" 2fr / 1fr;
-    grid-row-gap: 1em;
+    grid-row-gap: 0.5em;
 }
 /* #endregion VerticalLayout */
+/* #region CompactLayout */
+.compactLayout {
+    display: grid;
+    grid-template: "track-cover" 300px / 300px ;
+}
 
+.compactLayout .track-info-playback {
+    grid-area: track-cover;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    display: grid;
+    grid-template: "track-info" 3fr "track-playback" 2fr / 1fr;
+}
+/* #endregion VerticalLayout */
 

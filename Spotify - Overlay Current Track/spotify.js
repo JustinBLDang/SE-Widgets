@@ -75,18 +75,18 @@ const currentToken = {
 
 const animationStartAndEndDelay = 3; // delay time in seconds
 const StartDelayTrackNameAnimation = () => {
-  trackNameAnimation[0].pause();
-  setTimeout(() => { trackNameAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+  trackNameAnimation.pause();
+  setTimeout(() => { trackNameAnimation.play(); }, (animationStartAndEndDelay) * 1000);
 }
 const EndDelayTrackNameAnimation = () => {
-  setTimeout(() => { trackNameAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackNameAnimation.cancel();}, animationStartAndEndDelay * 1000);
 }
 const StartDelayTrackArtistAnimation = () => {
-  trackArtistAnimation[0].pause();
-  setTimeout(() => { trackArtistAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+  trackArtistAnimation.pause();
+  setTimeout(() => { trackArtistAnimation.play(); }, animationStartAndEndDelay * 1000);
 }
 const EndDelayTrackArtistAnimation = () => {
-  setTimeout(() => { trackArtistAnimation[0].play(); }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackArtistAnimation.cancel(); }, animationStartAndEndDelay * 1000);
 }
 
 const InitializeUI = () => {
@@ -98,35 +98,40 @@ const InitializeUI = () => {
   trackPlaybackBarElement = document.getElementById("track-progress");
   trackCoverElement = document.getElementById("track-cover");
 
-  trackNameAnimation = trackNameElement.getAnimations();
-  trackArtistAnimation = trackArtistElement.getAnimations();
+  trackNameAnimation = trackNameElement.getAnimations()[0];
+  trackArtistAnimation = trackArtistElement.getAnimations()[0];
 
   // stops text from moving at start and end to help readers.
-  trackNameElement.addEventListener("animationstart", StartDelayTrackNameAnimation);
-  trackNameElement.addEventListener("animationend", EndDelayTrackNameAnimation);
-  trackArtistElement.addEventListener("animationstart", StartDelayTrackArtistAnimation);
-  trackArtistElement.addEventListener("animationend", EndDelayTrackArtistAnimation);
-}
+  trackNameAnimation.addEventListener("cancel", StartDelayTrackNameAnimation);
+  trackNameAnimation.addEventListener("finish", EndDelayTrackNameAnimation);
+  trackArtistAnimation.addEventListener("cancel", StartDelayTrackArtistAnimation);
+  trackArtistAnimation.addEventListener("finish", EndDelayTrackArtistAnimation);
 
+  UpdateTrackName("Spotify - Display Current Track");
+  UpdateTrackArtist("Widget by NB_0B");
+}
 const UpdateTrackCover = (trackCover) => {
   trackCoverElement.style.background = `url(${trackCover})`;
 }
-
 const UpdateTrackName = (trackName) => {
   trackNameElement.innerText = trackName;
-  trackNameElement.style.animationPlayState = "paused";
 
   if (trackNameElement.getBoundingClientRect().width <= trackNameViewportElement.getBoundingClientRect().width) {
+    trackNameElement.style.animation = `0s linear 0s 1 normal forwards paused scrollRight`;
+    trackNameAnimation.pause();
     return;
   }
-
+  
   let newDelay = (desiredAnimationTime / desiredWidth) * (trackNameElement.getBoundingClientRect().width - trackNameViewportElement.getBoundingClientRect().width);
-
   trackNameElement.style.animation = `${newDelay}s linear 0s 1 normal forwards running scrollRight`;
+  trackNameAnimation.cancel();
 }
 
 const UpdateTrackArtist = (trackArtists) => {
-  if (trackArtists.length > 0) {
+  if(typeof trackArtists == "string"){
+    trackArtistElement.innerText = trackArtists;
+  }
+  else if (trackArtists.length > 0) {
     let temp = trackArtists[0].name;
     for (let artist = 1; artist < trackArtists.length; artist++) {
       temp += `, ${trackArtists[artist].name}`;
@@ -136,16 +141,17 @@ const UpdateTrackArtist = (trackArtists) => {
   else {
     trackArtistElement.innerText = "";
   }
-  trackArtistElement.style.animationPlayState = "paused";
   
   // tracknameViewport same size as artistnameViewport
   if (trackArtistElement.getBoundingClientRect().width <= trackNameViewportElement.getBoundingClientRect().width) {
+    trackArtistElement.style.animation = `0s linear 0s 1 normal forwards paused scrollRight`;
+    trackArtistAnimation.pause();
     return;
   }
 
   let newDelay =  (desiredAnimationTime / desiredWidth) * (trackArtistElement.getBoundingClientRect().width - trackNameViewportElement.getBoundingClientRect().width);
-
   trackArtistElement.style.animation = `${newDelay}s linear 0s 1 normal forwards running scrollRight`;
+  trackArtistAnimation.cancel();
 }
 
 const UpdatePlayback = (runtime, length = -1) => {
@@ -332,21 +338,32 @@ const App_Function = async () => {
 }
 
 const AppQuit = () => {
-  trackNameElement.removeEventListener("animationend", playTrackNameAnimation);
-  trackArtistElement.removeEventListener("animationend", playTrackArtistAnimation);
+  trackNameAnimation.removeEventListener("cancel", StartDelayTrackNameAnimation);
+  trackNameAnimation.removeEventListener("finish", EndDelayTrackNameAnimation);
+  trackArtistAnimation.removeEventListener("cancel", StartDelayTrackArtistAnimation);
+  trackArtistAnimation.removeEventListener("finish", EndDelayTrackArtistAnimation);
   clearInterval(appIntervalID);
   appIntervalID = null;
 }
 
+const Wait = async (wait_Time) => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(console.log("--------------------Widget Started--------------------"));
+    }, wait_Time);
+  });
+}
+
 window.addEventListener('onWidgetLoad', async function (obj) {
-  console.log("--------------------Widget Started--------------------");
+  await Wait(3000);
+  
   // getting field data from streamlabs
   fieldData = obj.detail.fieldData;
 
   // Initialization/setup
   InitializeUI();
   await InitializeSpotifyAPI(fieldData).catch(e => { console.log(e); });
-
+  
   // Over engineering so I feel good
   appIntervalID = setInterval(App_Function, tickRate);
 });
