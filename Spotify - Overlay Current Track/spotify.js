@@ -1,16 +1,18 @@
 const desiredAnimationTime = 6.144;
 const desiredWidth = 551.53 - 352.6;
 let trackCoverElement, trackNameElement, trackArtistElement, trackNameViewportElement, trackRuntimeElement, trackLengthElement, trackPlaybackBarElement;
-let clientId, clientSecret;
+let clientId, clientSecret, authCode;
 let normalRate = 500, currentRate = normalRate, idleRate = 2000, tickRate = 250;
 let elapsedTimeSinceAppFunctionCall = currentRate;
 let timeWindowForRefreshToken = 60000; // Attempt refresh 60s before expiration.
-let isAppBusy = false;
+let isAppBusy = false, isAppRateLimited = false;;
 let currentTrackLength;
 let appIntervalID;
 
 const tokenEndpoint = "https://accounts.spotify.com/api/token";
+const redirectUrl = "https://justinbldang.github.io/spotify-authorization/"
 
+//#region Helper Function/Structures
 const getFromSEStorage = async (value) => {
   let returnVal = null;
   await SE_API.store.get(value).then((data) => {
@@ -70,6 +72,16 @@ const currentToken = {
     return this;
   }
 };
+
+const pauseAndCall = async (func, wait_Time) => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(func());
+    }, wait_Time);
+  });
+}
+//#endregion Helper Function/Structures
+
 //#region UI
 // Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
 
@@ -211,7 +223,7 @@ async function refreshCurrentToken() {
     })
   });
 
-  response.function = "RefreshCurrentToken";
+  response.function = "refreshCurrentToken";
 
   if (await SpotifyErrorHandler(response)) {
     return Promise.reject({ status: "refresh-fail" });
@@ -220,15 +232,28 @@ async function refreshCurrentToken() {
   currentToken.save(await response.json());
   return Promise.resolve({ status: "refresh-success" });
 }
-//#endregion Spotify API
 
-const pauseAndCall = async (func, wait_Time) => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(func());
-    }, wait_Time);
+async function getAccessToken(authCode) {
+  const response = await fetch(tokenEndpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+    },
+    body: new URLSearchParams({
+      code: authCode,
+      redirect_uri: redirectUrl,
+      grant_type: 'authorization_code'
+    })
+  }).catch((error) => {
+    console.error(`Encountered problem when retrieving Access Token.\n\n${error}`);
+    return Promise.reject({ status: "get-access-code-fail" });
   });
+
+  currentToken.save(await response.json());
+  return Promise.resolve({ status: "get-access-code-success" });
 }
+//#endregion Spotify API
 
 // Handles: 204, 304, 400, 401, 404, 429, 500, 502, 503
 // return true if error, false if no error
@@ -257,9 +282,12 @@ const SpotifyErrorHandler = async (error, func = null) => {
     case 429:
       const safetyBuffer = 5;
       const wait_Time = error.headers.get("retry-after"); // retry-after header is time in seconds
-      console.log("Rate Limited. Retrying in " + (wait_Time + safetyBuffer) + " seconds.");
+      console.log("(SpotifyErrorHandler) Rate Limited. Retrying in " + (wait_Time + safetyBuffer) + " seconds.");
       if (func) {
+        isAppRateLimited = true;
         await pauseAndCall(func, (wait_Time + safetyBuffer) * 1000);
+        console.log("(SpotifyErrorHandler) Retrying widget.");
+        isAppRateLimited = false;
       }
       return true;
     case 500:
@@ -276,14 +304,17 @@ const SpotifyErrorHandler = async (error, func = null) => {
 const InitializeSpotifyAPI = async (fieldData) => {
   clientId = fieldData["spotifyClientID"];
   clientSecret = fieldData["spotifyClientSecretID"];
-  currentToken.save(JSON.parse(JSON.stringify(fieldData)));
+  authCode = fieldData["spotifyAuthCode"];
+  
   await currentToken.retrieve();
 
-  const currentTime = new Date();
+  if(!currentToken.access_token){
+    getAccessToken(authCode);
+  }
+
   await refreshCurrentToken().then((data) => {
     console.log("(InitializeSpotifyAPI) Refreshed Token");
-  }).catch((error) => {
-    SpotifyErrorHandler(error, refreshCurrentToken);
+  }).catch(() => {
     return Promise.reject({ status: "setup-fail", message: "(InitializeSpotifyAPI) Error on Initialization. Could not refresh token." });
   });
 
@@ -293,7 +324,7 @@ const InitializeSpotifyAPI = async (fieldData) => {
 const App_Function = async () => {
   // Ensures the program makes calls once every second
   elapsedTimeSinceAppFunctionCall += tickRate;
-  if (isAppBusy || (elapsedTimeSinceAppFunctionCall <= currentRate)) {
+  if (isAppBusy || isAppRateLimited || (elapsedTimeSinceAppFunctionCall <= currentRate)) {
     return;
   }
  
@@ -310,13 +341,6 @@ const App_Function = async () => {
   }
 
   let content = await getCurrentTrack().catch(e => { console.log(e) });
-
-  // 3. If we have new content: 
-  //   - Update UI with content
-  //   - TODO: Check if Playback is paused here and handle it
-  // contentPromise fulfills true if we have resolved promise or rejected promise, false if gettingContent(true)
-  // 4. If track doesnt exist or song isn't playing:
-  //   - Slow down polling rate
 
   // true if content is resolved, false otherwise
   if (content) {
@@ -346,23 +370,15 @@ const AppQuit = () => {
   appIntervalID = null;
 }
 
-const Wait = async (wait_Time) => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(console.log("--------------------Widget Started--------------------"));
-    }, wait_Time);
-  });
-}
-
 window.addEventListener('onWidgetLoad', async function (obj) {
-  await Wait(3000);
+  await pauseAndCall(() => {console.log("--------------------Widget Started--------------------")}, 1000);
   
   // getting field data from streamlabs
   fieldData = obj.detail.fieldData;
 
   // Initialization/setup
   InitializeUI();
-  await InitializeSpotifyAPI(fieldData).catch(e => { console.log(e); });
+  await InitializeSpotifyAPI(fieldData).catch(error => { console.log(error); });
   
   // Over engineering so I feel good
   appIntervalID = setInterval(App_Function, tickRate);

@@ -7,6 +7,10 @@
     "type": "string",
     "label": "Client SecretID for Spotify App"
   },
+  "spotifyClientAuthorizationCode": {
+    "type": "string",
+    "label": "Authorization Code for Spotify App"
+  },
   "Layout": {
     "type": "dropdown",
     "label": "Choose a Layout:",
