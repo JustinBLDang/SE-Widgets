@@ -1,6 +1,21 @@
 # Spotify - Overlay Current Track
 SE widget that displays the currently playing track on your spotify. Customize the layout of the display with various layouts, colors, and more.
 
+Features:
+1. Display song name, artist, album cover/video, duration.
+2. Horizontal, Vertical, and Compact Layout
+3. Customize text, panels, background gradient, and shape of widget
+
+Video Preview:
+
+![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
+
+In Progress:
+- Different overlay layouts
+- Improve customization tools
+- Reverse Engineer Spotify Canvas API
+- Extend app to work with Youtube Music
+   
 # Setup (WIP)
 Spotify Developer
 1. Create a spotify developer account.
@@ -20,19 +35,3 @@ Stream Elements
 4. Fill in **Client ID, Client Secret ID, and Authorization Code**(See Authorization Section).
 
 Once all the steps are done, you can copy the overlay URL from Stream Elements to create an overlay in OBS.
-   
-Features:
-1. Display song name, artist, album cover/video, duration.
-2. Horizontal, Vertical, and Compact Layout
-3. Customize text, panels, background gradient, and shape of widget
-
-Video Preview:
-
-![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
-
-In Progress:
-1. Different overlay layouts
-2. Improve customization tools
-3. Reverse Engineer Spotify Canvas API
-4. Extend app to work with Youtube Music
-
