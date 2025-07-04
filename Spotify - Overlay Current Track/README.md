@@ -29,7 +29,7 @@ Authorization
 4. Once you log in, you will return to my [Authorization Page](https://justinbldang.github.io/spotify-authorization/) and should see the **Authorization code**.
    
 Stream Elements
-1. Create a overlay in Stream Elements.
+1. Create a overlay in [Stream Elements](https://streamelements.com/).
 2. Open the new overlay and add a custom widget.
 3. Copy code into the custom widget.
 4. Fill in **Client ID, Client Secret ID, and Authorization Code**(See Authorization Section).
