@@ -11,10 +11,10 @@ Video Preview:
 ![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
 
 In Progress:
+- Reverse Engineer Spotify Canvas API
 - Readily available overlay layouts
 - Different overlay layouts
 - Improve customization tools
-- Reverse Engineer Spotify Canvas API
 - Extend app to work with Youtube Music
    
 # Setup (WIP)
