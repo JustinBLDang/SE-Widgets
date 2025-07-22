@@ -7,7 +7,9 @@ Features:
 3. Horizontal, Vertical, and Compact Layout
 4. Customize text, panels, background gradient, and shape of widget
 
-Video Preview:
+![spotify canvas demo](https://github.com/user-attachments/assets/020fcb32-4114-458b-b112-3db7d9b8bd0f)
+
+Customization:
 
 ![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
 
