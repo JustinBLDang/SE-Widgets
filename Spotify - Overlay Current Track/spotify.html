@@ -1,8 +1,11 @@
 <link href="https://fonts.googleapis.com/css?family={{fontName}}" rel="stylesheet">
 <div class="main-container {{Layout}}" id="main-container">
+    <div class="track-canvas CanvasStyle PanelStyle">
+        <video class="track-canvas-vertical" id="track-canvas" src="none" loop autoplay muted></video>
+    </div>
     <div class="cover ImageBGStyle PanelStyle" id="track-cover"></div>
-    <div class="track-info-playback GradientStyle">
-        <div class="track-info ColorBGStyle PanelStyle">
+    <div class="track-info-playback GradientStyle PaddingStyle">
+        <div class="track-info ColorBGStyle PanelStyle TextPanel">
             <div class="track-name" id="track-name-panel">
             	<div class="animated">
               		<div class="track-name-animated" id="track-name" style="font-size: 3em; font-weight: bold; color: {trackNameColor}; ">
@@ -16,7 +19,7 @@
             	</div>
   	        </div>
         </div>
-        <div class="track-playback ColorBGStyle PanelStyle">
+        <div class="track-playback ColorBGStyle PanelStyle TextPanel">
             <div class="track-time">
                 <div class="track-runtime" id="track-runtime" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
                 0:00
