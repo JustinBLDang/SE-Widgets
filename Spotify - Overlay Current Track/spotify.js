@@ -112,10 +112,7 @@ const pauseAndCall = async (func, wait_Time) => {
     }, wait_Time);
   });
 }
-//#endregion Helper Function/Structures
 
-//#region UI
-// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
 function getVideoDimensionsOf(url) {
   return new Promise(resolve => {
     const video = document.createElement('video');
@@ -132,7 +129,10 @@ function getVideoDimensionsOf(url) {
     video.remove();
   });
 }
+//#endregion Helper Function/Structures
 
+//#region UI
+// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
 const animationStartAndEndDelay = 3; // delay time in seconds
 const StartDelayTrackNameAnimation = () => {
   trackNameAnimation.pause();
