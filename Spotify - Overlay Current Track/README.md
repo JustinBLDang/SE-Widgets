@@ -14,7 +14,7 @@ Customization:
 ![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
 
 In Progress:
-- Preset overlay layouts
+- Improved preset overlay layouts
 
 Planned: 
 - Different overlay layouts
