@@ -14,10 +14,14 @@ Customization:
 ![ezgif-2657c05dc2643a](https://github.com/user-attachments/assets/6cbf3514-96db-4499-9fe6-3a3486540ac0)
 
 In Progress:
-- Readily available overlay layouts
+- Improved preset overlay layouts
+
+Planned: 
 - Different overlay layouts
 - Improve customization tools
 - Extend app to work with Youtube Music
+- Migrate user editor from stream elements to personal website
+- Integrate Twitch feature to allow users to tap on widget to view song
    
 # Setup (WIP)
 Spotify Developer

@@ -188,6 +188,7 @@ const getVideoDimensionsOf = (url) => {
     video.remove();
   });
 }
+//#endregion Helper Function/Structures
 
 // NOTE: Must be called after we get fieldData
 // Used to give functionality for hiding elements when their enable checkbox is selected
