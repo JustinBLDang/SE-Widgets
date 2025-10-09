@@ -1,35 +1,46 @@
 <link href="https://fonts.googleapis.com/css?family={{fontName}}" rel="stylesheet">
+<!-- 
+    TODO: Refactor system. Change readability by seperating elements to each have their unique additions
+    eg. GradientStyle and individualColorPanel. End result should be that the parent element determines size and shape.
+        The individualColorPanel and GradientStyle should fill to parent size and do whatever.
+-->
 <div class="main-container {{Layout}}" id="main-container">
-    <div class="track-canvas CanvasStyle PanelStyle">
-        <video class="track-canvas-vertical" id="track-canvas" src="none" loop autoplay muted></video>
-    </div>
-    <div class="cover ImageBGStyle PanelStyle" id="track-cover"></div>
-    <div class="track-info-playback GradientStyle PaddingStyle">
-        <div class="track-info ColorBGStyle PanelStyle TextPanel">
-            <div class="track-name" id="track-name-panel">
-            	<div class="animated">
-              		<div class="track-name-animated" id="track-name" style="font-size: 3em; font-weight: bold; color: {trackNameColor}; ">
-                	</div>
-            	</div>
-  	        </div>
-  	        <div class="track-artist" id="track-artist-panel">
-            	<div class="animated">
-              		<div class="track-artist-animated" id="track-artist" style="font-size: 2em; color: {artistNameColor};">
-            		</div>
-            	</div>
-  	        </div>
+    <div class="track-cover CoverPanelStyle">
+        <img class="fill-to-parent-size" id="track-cover" src="https://i.scdn.co/image/ab67616d00001e02ff9ca10b55ce82ae553c8228">
+        <div class="track-canvas CanvasStyle fill-to-parent-size">
+            <video class="track-canvas-vertical" id="track-canvas" src="none" loop autoplay muted></video>
         </div>
-        <div class="track-playback ColorBGStyle PanelStyle TextPanel">
-            <div class="track-time">
-                <div class="track-runtime" id="track-runtime" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
-                0:00
+    </div>
+    <div class="track-info-playback StaticGradient checkboxEnableVisibility">
+        <div class="track-info-playback-container"> 
+            <div class="track-info IndividualColorPanel InfoPanelStyle TextPanel checkboxEnableVisibility">
+                <div class="track-name" id="track-name-panel">
+                    <div class="animated">
+                        <div class="track-name-animated" id="track-name" style="font-size: 3em; font-weight: bold; color: {trackNameColor}; ">
+                            Spotify - Display Current Track
+                        </div>
+                    </div>
                 </div>
-                <div class="track-length" id="track-length" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
-                    0:00
+                <div class="track-artist" id="track-artist-panel">
+                    <div class="animated">
+                        <div class="track-artist-animated" id="track-artist" style="font-size: 2em; color: {artistNameColor};">
+                            Widget by NB_0B
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="track-bar">
-                <div class="track-progress" id="track-progress">
+            <div class="track-playback IndividualColorPanel InfoPanelStyle checkboxEnableVisibility">
+                <div class="track-time">
+                    <div class="track-runtime" id="track-runtime" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
+                    0:00
+                    </div>
+                    <div class="track-length" id="track-length" style="font-size: 2em; font-weight: bold; color: {trackDurationColor};">
+                        0:00
+                    </div>
+                </div>
+                <div class="track-bar">
+                    <div class="track-progress" id="track-progress">
+                    </div>
                 </div>
             </div>
         </div>

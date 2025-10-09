@@ -1,7 +1,14 @@
+/*
+TODO: 
+1) Add Animated Gradient
+2) Add Single Color Panel that covers everything like the gradient panel
+3) Fix HTML structure so that color panel does not cover the text
+*/
+
 //#region Variables
 const desiredAnimationTime = 6.144;
 const desiredWidth = 551.53 - 352.6;
-let currentTrackLength;
+let currentTrackRuntime, currentTrackLength;
 let appIntervalID;
 let runtimeMinutes = 0;
 let runtimeSeconds = 0;
@@ -18,7 +25,7 @@ let tickRate = 250;
 let normalRate = 500;
 let currentRate = normalRate;
 let idleRate = 2000;
-playbackRate = 1000;
+let playbackRate = 1000;
 
 // Elapsed Time
 let elapsedTimeSinceAppFunctionCall = currentRate;
@@ -112,11 +119,60 @@ const pauseAndCall = async (func, wait_Time) => {
     }, wait_Time);
   });
 }
+
+const findAllEnableCheckboxesFromFieldData = () => {
+  let keys = Object.keys(fieldData);
+  let listOfCheckboxTargets = [];
+
+  // Main usage for checkbox is to hide panels 
+  const keyTarget = /EnableCheckbox/g;
+
+  keys.forEach((key) => {
+    if(keyTarget.exec(key)) {
+      listOfCheckboxTargets.push(key);
+    }
+  });
+
+  return listOfCheckboxTargets;
+}
+
+const changeVisibilityOfElementandChildElements = (element, visibility="visible") => {
+  if(visibility == "visible" || visibility == "hidden"){
+    
+  }
+  else {
+    console.error("(changeVisibilityOfElementandChildElements) visibility set to invalid value.(valid values: \"visible\" and \"hidden\"");
+    return;
+  }
+
+  let temp = [];
+
+  if(Array.isArray(element)) {
+    temp = element;
+  }
+  else if(element.length > 0) {
+    temp = Array.from(element);
+  }
+  else {
+    temp = [element];
+  }
+
+  while(temp.length > 0){
+    let child = temp.pop();
+
+    child.style.visibility = visibility;
+
+    if(child.children.length > 0){
+      Array.from(child.children).forEach((child) => {
+        temp.push(child);
+      });
+    }
+  }
+}
 //#endregion Helper Function/Structures
 
 //#region UI
-// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
-function getVideoDimensionsOf(url) {
+const getVideoDimensionsOf = (url) => {
   return new Promise(resolve => {
     const video = document.createElement('video');
 
@@ -133,20 +189,60 @@ function getVideoDimensionsOf(url) {
   });
 }
 
-const animationStartAndEndDelay = 3; // delay time in seconds
+// NOTE: Must be called after we get fieldData
+// Used to give functionality for hiding elements when their enable checkbox is selected
+const InitializeVisibilityCheckBoxes = () => {
+  const checkboxTargets = findAllEnableCheckboxesFromFieldData();
+  const checkboxElements = Array.from(document.getElementsByClassName("checkboxEnableVisibility"));
+  
+  // WARNING: When you restructure html structure, you will need to the checkBoxElements to iterate over all elements correctly.
+  // Due to html structure, the parent object(checkBoxElements[0]) contains all checkbox elements.
+  changeVisibilityOfElementandChildElements(checkboxElements[0], "visible");
+
+  let cleanedTargetString;
+  let targetRegex;
+  let foundElementMatch = false;
+
+  checkboxTargets.forEach(target => {
+    cleanedTargetString = target.replace("EnableCheckbox", "");
+    targetRegex = new RegExp(cleanedTargetString, "i");
+
+    checkboxElements.forEach(element => {
+      for (const elementClass of element.classList.values()) {
+        if(targetRegex.test(elementClass)){
+          if(fieldData[target]){
+            element.style.visibility = "visible";
+          }
+          else {
+            element.style.visibility = "hidden";
+          }
+          foundElementMatch = true;
+          break;
+        }
+      }
+    });
+    if(!foundElementMatch) {
+        foundElementMatch = false;
+        console.error("(InitializeEnableCheckBoxes) No match for checkbox: " + target);
+      }
+  });
+}
+
+// Used for adding delay at end of animation. Delay at start is done using animation-delay property(css)
+const animationStartAndEndDelay = 3000; // animationStartAndEndDelay value = # of seconds to delay * 1000
 const StartDelayTrackNameAnimation = () => {
   trackNameAnimation.pause();
-  setTimeout(() => { trackNameAnimation.play(); }, (animationStartAndEndDelay) * 1000);
+  setTimeout(() => { trackNameAnimation.play(); }, (animationStartAndEndDelay));
 }
 const EndDelayTrackNameAnimation = () => {
-  setTimeout(() => { trackNameAnimation.cancel();}, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackNameAnimation.cancel();}, animationStartAndEndDelay);
 }
 const StartDelayTrackArtistAnimation = () => {
   trackArtistAnimation.pause();
-  setTimeout(() => { trackArtistAnimation.play(); }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackArtistAnimation.play(); }, animationStartAndEndDelay);
 }
 const EndDelayTrackArtistAnimation = () => {
-  setTimeout(() => { trackArtistAnimation.cancel(); }, animationStartAndEndDelay * 1000);
+  setTimeout(() => { trackArtistAnimation.cancel(); }, animationStartAndEndDelay);
 }
 
 const InitializeUI = () => {
@@ -190,13 +286,15 @@ const UpdateTrackCanvas = async (trackCanvas) => {
   }
 }
 
+// TODO: update the default canvas shown to something better.
 const UpdateTrackCover = (trackCover) => {
-  trackCoverElement.style.background = `url(${trackCover})`;
+  trackCoverElement.src = trackCover;
 }
 
 const UpdateTrackName = (trackName) => {
   trackNameElement.innerText = trackName;
 
+  
   if (trackNameElement.getBoundingClientRect().width <= trackNameViewportElement.getBoundingClientRect().width) {
     trackNameElement.style.animation = `0s linear 0s 1 normal forwards paused scrollRight`;
     trackNameAnimation.pause();
@@ -238,45 +336,56 @@ const UpdateTrackArtist = (trackArtists) => {
 // UpdatePlayback runs asynchronously and synchronously. Either seperate the synchronous code into another function
 // or keep it this way.
 const UpdatePlayback = (runtime = -1, length = -1) => {
+  // Asynchronous code
+  if (length >= 0) {
+    currentTrackLength = length;
+    let lengthDate = new Date(length);
+    trackLengthElement.textContent = lengthDate.getMinutes() + ":" + ("0" + lengthDate.getSeconds()).slice(-2);
+  }
+
+  if(runtime >= 0){
+    let runtimeDate = new Date(runtime);
+
+    if(runtimeDate.getSeconds() > runtimeSeconds + 1 || runtimeDate.getSeconds() < runtimeSeconds - 1) {
+      currentTrackRuntime = runtime;
+      runtimeSeconds = runtimeDate.getSeconds();
+    }
+
+    runtimeMinutes = runtimeDate.getMinutes();
+    trackRuntimeElement.textContent = runtimeMinutes + ":" + ("0" + runtimeSeconds).slice(-2);
+    trackPlaybackBarElement.style.width = `${(currentTrackRuntime / currentTrackLength) * 100}%`;
+  }
+
   // Synchronous code
+  // isTrackPlaying is needed for synchronous code, and not for asynchronous code.
   if(!isTrackPlaying){
     return;
   }
+
   if(runtime == -1 && length == -1){
-    if(elapsedTimeSincePlaybackUpdate < playbackRate){
+    let currentTrackLengthDate = new Date(currentTrackLength);
+    if(elapsedTimeSincePlaybackUpdate < playbackRate || (currentTrackRuntime == currentTrackLength)){
       return;
     }
-    const temp = new Date();
-    console.log(temp.getSeconds());
+
+    // If runtime has exceeded the trackLength
+    if((runtimeMinutes >= currentTrackLengthDate.getMinutes()) && (runtimeSeconds >= currentTrackLengthDate.getSeconds())){
+      currentTrackRuntime = currentTrackLength;
+      return;
+    }
+
     elapsedTimeSincePlaybackUpdate = 0;
     runtimeSeconds++;
+    currentTrackRuntime += 1000;
 
     if(runtimeSeconds >= 60){
       runtimeSeconds = 0;
       runtimeMinutes++;
     }
     trackRuntimeElement.textContent = runtimeMinutes + ":" + ("0" + runtimeSeconds).slice(-2);
-    return;
   }
 
-  // asynchronous code
-  if(runtime > 0){
-    let runtimeDate = new Date(runtime);
-    if(runtimeDate.getSeconds() > runtimeSeconds + 1 || runtimeDate.getSeconds() < runtimeSeconds - 1) {
-      runtimeSeconds = runtimeDate.getSeconds();
-    }
-
-    runtimeMinutes = runtimeDate.getMinutes();
-    trackRuntimeElement.textContent = runtimeMinutes + ":" + ("0" + runtimeSeconds).slice(-2);
-  }
-
-  if (length > 0) {
-    currentTrackLength = length;
-    let lengthDate = new Date(length);
-    trackLengthElement.textContent = lengthDate.getMinutes() + ":" + ("0" + lengthDate.getSeconds()).slice(-2);
-  }
-
-  trackPlaybackBarElement.style.width = `${(runtime / currentTrackLength) * 100}%`;
+  trackPlaybackBarElement.style.width = `${(currentTrackRuntime / currentTrackLength) * 100}%`;
 }
 //#endregion UI
 //#region Spotify API
@@ -299,12 +408,17 @@ async function getCurrentTrack() {
     headers: { Authorization: 'Bearer ' + currentToken.access_token },
   }).catch(e => { console.error(e); });
 
-  response.function = "GetCurrentTrack";
-  response.status == "204" ? response.message = "No Track Currently Playing." : "";
-
+  try { 
+    response.function = "GetCurrentTrack";
+    response.status == "204" ? response.message = "No Track Currently Playing." : "";
+  }
+  catch(error) {
+    console.error(error);
+  }
+  
   // Check if no content found in track player
   if (await SpotifyErrorHandler(response)) {
-    return Promise.reject({ status: "get-content-fail" });
+    return null;
   }
 
   return await response.json();
@@ -332,19 +446,21 @@ async function getCurrentTrack() {
   }
 */
 async function getCurrentTrackCanvas(trackId) {
-  const canvasAPIEndpointWithTrackID = new URL("CANVASAPI URL NOT PROVIDED CURRENTLY");
+  const canvasAPIEndpointWithTrackID = new URL("https://spotify-canvas-api-lime.vercel.app/api/canvas");
   canvasAPIEndpointWithTrackID.searchParams.set("trackId", trackId);
 
   try {
     const response = await fetch(canvasAPIEndpointWithTrackID.toString(), {
       method: 'GET'
     });
+
     response.function = "getCurrentTrackCanvas";
     response.message = "No canvas available for current track.";
 
     if (await SpotifyErrorHandler(response)) {
       return "";
     }
+
     return (await response.json()).canvasesList[0].canvasUrl;
   }
   catch(e) {
@@ -366,8 +482,14 @@ async function refreshCurrentToken() {
     })
   });
 
-  response.function = "refreshCurrentToken";
+  try { 
+    response.function = "refreshCurrentToken";
+  }
+  catch(error) {
+    console.error(error);
+  }
 
+  // TODO: I have yet to see a refresh fail, so it isnt handled properly. I return rejection to be handled outside of function.
   if (await SpotifyErrorHandler(response)) {
     return Promise.reject({ status: "refresh-fail" });
   }
@@ -415,7 +537,7 @@ const SpotifyErrorHandler = async (error, func = null) => {
     case 204:
       if(error["function"] == "GetCurrentTrack") {
         currentRate = idleRate;
-      }
+      } 
       return true;
     case 304:
       return true;
@@ -497,11 +619,10 @@ const App_Function = async () => {
     });
   }
 
-  let content = await getCurrentTrack().catch(e => { console.error(e) });
+  let content = await getCurrentTrack().catch(error => {console.error(error)});
 
   // true if content is resolved, false otherwise
   if (content) {
-    isTrackPlaying = true;
     if(content["item"].name != trackNameElement.textContent){
       let canvasUrl = await getCurrentTrackCanvas(content["item"].id);
       UpdateTrackName(content["item"].name);
@@ -509,15 +630,11 @@ const App_Function = async () => {
       UpdateTrackCover(content["item"].album.images[1].url);
       UpdateTrackCanvas(canvasUrl);
     }
+    isTrackPlaying = content["is_playing"];
     UpdatePlayback(content["progress_ms"], content["item"].duration_ms);
 
     // If track player is playing a song, linear decrease of interval period by tickRate
-    if (currentRate != normalRate) {
-      currentRate = Math.max(currentRate - tickRate, normalRate);
-    }
-  }
-  else {
-    isTrackPlaying = false;
+    isTrackPlaying ? currentRate = normalRate : currentRate = idleRate;
   }
   elapsedTimeSinceAppFunctionCall = 0;
   isAppBusy = false;
@@ -533,17 +650,18 @@ const AppQuit = () => {
 }
 
 window.addEventListener('onWidgetLoad', async function (obj) {
-  // TODO: onWidgetLoad not consistent during development(executing before DOM tree loads), maybe in future try DOMContentLoaded. 
-  await pauseAndCall(() => {console.log("--------------------Widget Started--------------------")}, 1000);
+  // TODO: onWidgetLoad not consistent during development(executing before DOM tree loads), Check in the future if this changes (failed, last checked: 8/3/25)
+  await pauseAndCall(() => {console.log("--------------------Widget Started--------------------")}, 50);
   
   // getting field data from json file/values entered by user on stream elements
   fieldData = obj.detail.fieldData;
 
+  InitializeVisibilityCheckBoxes();
   // Initialization/setup
-  InitializeUI();
-  await InitializeSpotifyAPI(fieldData).catch(error => { console.log(error); });
+  // InitializeUI();
+  // await InitializeSpotifyAPI(fieldData).catch(error => { console.log(error); });
 
-  appIntervalID = setInterval(App_Function, tickRate);
+  // appIntervalID = setInterval(App_Function, tickRate);
 });
 
 onbeforeunload = (event) => {
